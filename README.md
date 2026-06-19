@@ -23,6 +23,8 @@ cd src
 python3 etape4_consolidation.py  # génère data/output.csv (~40 min)
 python3 etape7_alertes.py        # génère les alertes email
 ```
+/!\ si vous voulez vraiment envoyer un mail ajoutez un .env (voir exemple) /!\
+/!\ aussi changer la var global 'simuler' dans etape7_alertes /!\
 
 Ouvrir ensuite `projet.ipynb` avec Jupyter pour les visualisations et modèles ML.
 

@@ -10,22 +10,30 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from dotenv import load_dotenv
 
+simuler = True  # Mettre a False pour envoyer reellement les emails (configurer EMAIL_CONFIG)
 
 CSV_PATH = os.path.join(os.path.dirname(__file__), "../data/output.csv")
+
+if not simuler:
+    # Charger les variables d'environnement depuis un fichier .env a la racine du projet
+    load_dotenv(os.path.join(os.path.dirname(__file__), "../.env"))
 
 # Seuils d'alerte
 SEUIL_CVSS_CRITIQUE = 9.0
 SEUIL_EPSS = 0.7
 
+
+
 # Configuration email
 EMAIL_CONFIG = {
-    "from_email": "votre_email@gmail.com",
-    "password": "mot_de_passe_application",
+    "from_email": os.environ.get("ALERT_EMAIL") if not simuler else "admin@company.com",
+    "password": os.environ.get("ALERT_PASSWORD") if not simuler else "****************",
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587
 }
-
+print(f"EMAIL_CONFIG: {EMAIL_CONFIG['from_email']} (mot de passe masque)")
 # Produits surveilles
 PRODUITS_SURVEILLES = [
     "Apache", "Windows", "Chrome", "Firefox",
@@ -140,7 +148,7 @@ def generer_corps_email(df_alerte, produit=None):
     return corps
 
 
-def envoyer_email(to_email, sujet, corps_html, simuler=True):
+def envoyer_email(to_email, sujet, corps_html):
     """
     Envoie un email HTML d'alerte.
     Si simuler=True, affiche l'email sans l'envoyer reellement.
@@ -181,7 +189,7 @@ def envoyer_email(to_email, sujet, corps_html, simuler=True):
     return False
 
 
-def generer_alertes(csv_path=CSV_PATH, destinataire="admin@exemple.com", simuler=True):
+def generer_alertes(csv_path=CSV_PATH, destinataire="admin@exemple.com"):
     """
     Pipeline de generation d'alertes :
     1. Charge le CSV
@@ -204,7 +212,7 @@ def generer_alertes(csv_path=CSV_PATH, destinataire="admin@exemple.com", simuler
     if not df_critique.empty:
         sujet = generer_sujet(df_critique)
         corps = generer_corps_email(df_critique)
-        envoyer_email(destinataire, sujet, corps, simuler=simuler)
+        envoyer_email(destinataire, sujet, corps)
 
     for produit in PRODUITS_SURVEILLES:
         df_produit = filtrer_par_produit(df_critique, produit)
@@ -212,9 +220,9 @@ def generer_alertes(csv_path=CSV_PATH, destinataire="admin@exemple.com", simuler
             print(f"\n[ALERTES] {len(df_produit)} CVEs critiques pour {produit}")
             sujet = generer_sujet(df_produit, produit=produit)
             corps = generer_corps_email(df_produit, produit=produit)
-            envoyer_email(destinataire, sujet, corps, simuler=simuler)
+            envoyer_email(destinataire, sujet, corps)
 
 
 if __name__ == "__main__":
     # Passer simuler=False pour envoyer reellement (configurer EMAIL_CONFIG)
-    generer_alertes(simuler=True)
+    generer_alertes(destinataire="hugo.zins@supdevinci-edu.fr") # changer l'adresse email de destination selon vos besoins
